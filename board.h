@@ -99,7 +99,7 @@ public:
 				if (tile == 0) continue;
 				row[c] = 0;
 				if (hold) {
-					if (tile == hold) {
+					if ( std::abs(tile-hold)==1 || (tile==1 && hold==1) ) {
 						int m=std::max(tile,hold)+1;
 						row[top++] = m;
 						score += fib(m);
