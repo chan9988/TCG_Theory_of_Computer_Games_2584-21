@@ -100,13 +100,28 @@ class player : public random_agent {
 public:
 	player(const std::string& args = "") : random_agent("name=dummy role=player " + args),
 		opcode({ 0, 1, 2, 3 }) {}
-
+/* random version
 	virtual action take_action(const board& before) {
 		std::shuffle(opcode.begin(), opcode.end(), engine);
 		for (int op : opcode) {
 			board::reward reward = board(before).slide(op);
 			if (reward != -1) return action::slide(op);
 		}
+		return action();
+	}
+*/
+// greedy version
+	virtual action take_action(const board& before) {
+		int max_reward=-1;
+		int move=-1;
+		for (int op : opcode) {
+			board::reward r = board(before).slide(op);
+			if (r>max_reward){
+				move=op;
+				max_reward=r;
+			}
+		}
+		if (max_reward != -1) return action::slide(move);
 		return action();
 	}
 
