@@ -48,6 +48,11 @@ public:
 	data info() const { return attr; }
 	data info(data dat) { data old = attr; attr = dat; return old; }
 
+	int fib(int i){
+		int f[]={0,1,2,3,5,8,13,21,34,55,89,144,233,377,610,987,1597,2584,4181,6765,10946,17711,28657,46368,75025,121393,196418,317811,514229,832040,1346269,2178309,3524578};
+		return f[i];
+	}
+
 public:
 	bool operator ==(const board& b) const { return tile == b.tile; }
 	bool operator < (const board& b) const { return tile <  b.tile; }
@@ -95,8 +100,9 @@ public:
 				row[c] = 0;
 				if (hold) {
 					if (tile == hold) {
-						row[top++] = ++tile;
-						score += (1 << tile);
+						int m=std::max(tile,hold)+1;
+						row[top++] = m;
+						score += fib(m);
 						hold = 0;
 					} else {
 						row[top++] = hold;
