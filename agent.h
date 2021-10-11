@@ -99,7 +99,7 @@ private:
 class player : public random_agent {
 public:
 	player(const std::string& args = "") : random_agent("name=dummy role=player " + args),
-		opcode({ 0, 1, 3, 2 }) {}
+		opcode({ 0, 3, 1, 2 }) {}
 /* random version
 	virtual action take_action(const board& before) {
 		std::shuffle(opcode.begin(), opcode.end(), engine);
@@ -110,7 +110,7 @@ public:
 		return action();
 	}
 */
-// greedy version
+/* greedy version
 	virtual action take_action(const board& before) {
 		int max_reward=-1;
 		int move=-1;
@@ -124,7 +124,60 @@ public:
 		if (max_reward != -1) return action::slide(move);
 		return action();
 	}
+*/
+// some heuristics + greedy
+	virtual action take_action(const board& before) {
+		int max_reward=-1;
+		int move=-1;
+		uint32_t max_ind=0;
+		board::grid g=before.operator const board::grid &();
+		int max_i=-1,max_j=-1;
+		for(int i=0;i<4;i++){
+			for(int j=0;j<4;j++){
+				if(g[i][j]>max_ind){
+					max_ind=g[i][j];
+					max_i=i;
+					max_j=j;
+				}
+			}
+		}
 
+		if(max_i==0&&max_j==0){
+			if(board(before).slide(0)!=-1) return action::slide(0);
+			if(board(before).slide(3)!=-1) return action::slide(3);
+		}
+		else if(max_i==0&&max_j==3){
+			if(board(before).slide(0)!=-1) return action::slide(0);
+			if(board(before).slide(1)!=-1) return action::slide(1);
+		}
+		else if(max_i==3&&max_j==0){
+			if(board(before).slide(3)!=-1) return action::slide(3);
+			if(board(before).slide(2)!=-1) return action::slide(2);
+		}
+		else if(max_i==3&&max_j==3){
+			if(board(before).slide(1)!=-1) return action::slide(1);
+			if(board(before).slide(2)!=-1) return action::slide(2);
+		}
+		else if(max_i==0){
+			if(g[0][0]==0&&board(before).slide(3)!=-1) return action::slide(3);
+			else if(g[0][3]==0&&board(before).slide(1)!=-1) return action::slide(1);
+		}
+		else if(max_i==3){
+			if(g[3][0]==0&&board(before).slide(3)!=-1) return action::slide(3);
+			else if(g[3][3]==0&&board(before).slide(1)!=-1) return action::slide(1);
+		}
+		
+		for (int op : opcode) {
+			board::reward r = board(before).slide(op);
+			if (r>max_reward){
+				move=op;
+				max_reward=r;
+			}
+		}
+		if (max_reward != -1) return action::slide(move);
+		return action();
+	}
+	
 private:
 	std::array<int, 4> opcode;
 };
