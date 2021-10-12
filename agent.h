@@ -127,48 +127,16 @@ public:
 */
 // some heuristics + greedy
 	virtual action take_action(const board& before) {
+		//std::cout << before << '\n';
 		int max_reward=-1;
 		int move=-1;
-		uint32_t max_ind=0;
-		board::grid g=before.operator const board::grid &();
-		int max_i=-1,max_j=-1;
-		for(int i=0;i<4;i++){
-			for(int j=0;j<4;j++){
-				if(g[i][j]>max_ind){
-					max_ind=g[i][j];
-					max_i=i;
-					max_j=j;
-				}
-			}
-		}
-
-		if(max_i==0&&max_j==0){
-			if(board(before).slide(0)!=-1) return action::slide(0);
-			if(board(before).slide(3)!=-1) return action::slide(3);
-		}
-		else if(max_i==0&&max_j==3){
-			if(board(before).slide(0)!=-1) return action::slide(0);
-			if(board(before).slide(1)!=-1) return action::slide(1);
-		}
-		else if(max_i==3&&max_j==0){
-			if(board(before).slide(3)!=-1) return action::slide(3);
-			if(board(before).slide(2)!=-1) return action::slide(2);
-		}
-		else if(max_i==3&&max_j==3){
-			if(board(before).slide(1)!=-1) return action::slide(1);
-			if(board(before).slide(2)!=-1) return action::slide(2);
-		}
-		else if(max_i==0){
-			if(g[0][0]==0&&board(before).slide(3)!=-1) return action::slide(3);
-			else if(g[0][3]==0&&board(before).slide(1)!=-1) return action::slide(1);
-		}
-		else if(max_i==3){
-			if(g[3][0]==0&&board(before).slide(3)!=-1) return action::slide(3);
-			else if(g[3][3]==0&&board(before).slide(1)!=-1) return action::slide(1);
-		}
-		
 		for (int op : opcode) {
-			board::reward r = board(before).slide(op);
+			board one_step=before;
+			board::reward r = board(one_step).slide(op);
+			if(r==-1) continue;
+			if(op==0) r*=6;
+			else if(op==1) r*=7;
+			else r*=3;
 			if (r>max_reward){
 				move=op;
 				max_reward=r;
