@@ -16,6 +16,7 @@
 #include <algorithm>
 #include "board.h"
 #include "action.h"
+#include "weight.h"
 #include <fstream>
 
 class agent {
