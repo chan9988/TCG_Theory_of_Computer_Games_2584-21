@@ -72,7 +72,7 @@ protected:
  */
 class weight_agent : public agent {
 public:
-	weight_agent(const std::string& args = "") : agent(args), alpha(0) {
+	weight_agent(const std::string& args = "") : agent("name=weight_agent role=environment " + args), alpha(0) {
 		if (meta.find("init") != meta.end())
 			init_weights(meta["init"]);
 		if (meta.find("load") != meta.end())
@@ -85,10 +85,59 @@ public:
 			save_weights(meta["save"]);
 	}
 
+	virtual void open_episode(const std::string& flag = "") {
+		reward_history.clear();
+		board_history.clear();
+	}
+	
+	virtual void close_episode(const std::string& flag = "") {
+		if(board_history.empty()) return;
+		if(alpha==0) return;
+		adjust_table(board_history[board_history.size()-1],0);
+		for(int t=board_history.size()-1;t>=0;t--){
+			adjust_table(board_history[t],reward_history[t+1]+v_value(board_history[t+1]));
+		}
+	}
+
+	float v_value(const board& after) const{
+		float val=0;
+		val+=net[0][after(0)*25*25*25+after(1)*25*25+after(2)*25+after(3)];
+		val+=net[1][after(4)*25*25*25+after(5)*25*25+after(6)*25+after(7)];
+		val+=net[2][after(8)*25*25*25+after(9)*25*25+after(10)*25+after(11)];
+		val+=net[3][after(12)*25*25*25+after(13)*25*25+after(14)*25+after(15)];
+		val+=net[4][after(0)*25*25*25+after(4)*25*25+after(8)*25+after(12)];
+		val+=net[5][after(1)*25*25*25+after(5)*25*25+after(9)*25+after(13)];
+		val+=net[6][after(2)*25*25*25+after(6)*25*25+after(10)*25+after(14)];
+		val+=net[7][after(3)*25*25*25+after(7)*25*25+after(11)*25+after(15)];
+		return val;
+	}
+
+	void adjust_table(const board& after, float target){
+		float current=v_value(after);
+		float error=target-current;
+		float adjust=alpha*error;
+		net[0][after(0)*25*25*25+after(1)*25*25+after(2)*25+after(3)]+=adjust;
+		net[1][after(4)*25*25*25+after(5)*25*25+after(6)*25+after(7)]+=adjust;
+		net[2][after(8)*25*25*25+after(9)*25*25+after(10)*25+after(11)]+=adjust;
+		net[3][after(12)*25*25*25+after(13)*25*25+after(14)*25+after(15)]+=adjust;
+		net[4][after(0)*25*25*25+after(4)*25*25+after(8)*25+after(12)]+=adjust;
+		net[5][after(1)*25*25*25+after(5)*25*25+after(9)*25+after(13)]+=adjust;
+		net[6][after(2)*25*25*25+after(6)*25*25+after(10)*25+after(14)]+=adjust;
+		net[7][after(3)*25*25*25+after(7)*25*25+after(11)*25+after(15)]+=adjust;
+	}
+
 protected:
 	virtual void init_weights(const std::string& info) {
 //		net.emplace_back(65536); // create an empty weight table with size 65536
 //		net.emplace_back(65536); // create an empty weight table with size 65536
+		net.emplace_back(25*25*25*25);
+		net.emplace_back(25*25*25*25);
+		net.emplace_back(25*25*25*25);
+		net.emplace_back(25*25*25*25);
+		net.emplace_back(25*25*25*25);
+		net.emplace_back(25*25*25*25);
+		net.emplace_back(25*25*25*25);
+		net.emplace_back(25*25*25*25);
 	}
 	virtual void load_weights(const std::string& path) {
 		std::ifstream in(path, std::ios::in | std::ios::binary);
@@ -107,10 +156,36 @@ protected:
 		for (weight& w : net) out << w;
 		out.close();
 	}
+	
+	virtual action take_action(const board& before) {
+		int best_move=-1;
+		int max_reward=-1;
+		float max_val=-100000;
+		board next_board;
+		for (int op=0;op<4;op++) {
+			board after = before;
+			board::reward r = after.slide(op);
+			if(r==-1) continue;
+			float val=v_value(after);
+			if (r+val>max_reward+max_val){
+				best_move=op;
+				max_reward=r;
+				max_val=val;
+				next_board=after;
+			}
+		}
+		if(best_move!=-1){
+			reward_history.push_back(max_reward);
+			board_history.push_back(next_board);
+		}
+		return action::slide(best_move);
+	}
 
 protected:
 	std::vector<weight> net;
 	float alpha;
+	std::vector<int> reward_history;
+	std::vector<board> board_history;
 };
 
 
