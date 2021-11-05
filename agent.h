@@ -94,7 +94,7 @@ public:
 		if(board_history.empty()) return;
 		if(alpha==0) return;
 		adjust_table(board_history[board_history.size()-1],0);
-		for(int t=board_history.size()-1;t>=0;t--){
+		for(int t=board_history.size()-2;t>=0;t--){
 			adjust_table(board_history[t],reward_history[t+1]+v_value(board_history[t+1]));
 		}
 	}
