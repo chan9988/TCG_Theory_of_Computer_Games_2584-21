@@ -160,7 +160,7 @@ protected:
 	virtual action take_action(const board& before) {
 		int best_move=-1;
 		int max_reward=-1;
-		float max_val=-100000;
+		float max_val=-std::numeric_limits<float>::max();
 		board next_board;
 		for (int op=0;op<4;op++) {
 			board after = before;
